@@ -55,6 +55,14 @@ public class OrganizationSteps {
         session.expectStatus(201);
     }
 
+    @Dado("que registré {int} obras activas")
+    public void activeWorksitesRegistered(int count) throws Exception {
+        for (int i = 1; i <= count; i++) {
+            registerWorksite("Obra activa " + i, "Av. Principal " + i, "Miraflores", "Lima", "2026-01-01", null);
+            session.expectStatus(201);
+        }
+    }
+
     @Entonces("la obra {string} figura en {string}, {string}, {string} del {string} al {string}")
     public void worksiteIs(String name, String address, String district, String city, String start, String end)
             throws Exception {

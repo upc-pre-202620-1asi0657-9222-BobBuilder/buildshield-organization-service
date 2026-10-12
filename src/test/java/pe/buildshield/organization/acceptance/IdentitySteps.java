@@ -73,6 +73,30 @@ public class IdentitySteps {
                 "SELECT count(*) FROM user_projection WHERE user_id = ? AND NOT active", user.userId()) == 1);
     }
 
+    @Dado("que la organización tiene el plan {string} pagado")
+    public void planPaid(String plan) {
+        Integer limit = plan.equals("PLUS") ? 5 : null;
+        kafka.send(Topics.SUBSCRIPTION, organizationId.toString(), TestOrganizations.subscriptionEvent(json,
+                "SubscriptionActivated", organizationId, plan, "ACTIVE", limit, java.time.Instant.now()));
+        await().atMost(EVENT_TIMEOUT).until(() -> count(
+                "SELECT count(*) FROM subscription_projection WHERE organization_id = ? AND plan = '" + plan + "'",
+                organizationId) == 1);
+    }
+
+    @Dado("que la suscripción de la organización venció")
+    public void subscriptionExpired() {
+        kafka.send(Topics.SUBSCRIPTION, organizationId.toString(), TestOrganizations.subscriptionEvent(json,
+                "SubscriptionExpired", organizationId, "FREE", "EXPIRED", null, java.time.Instant.now()));
+        await().atMost(EVENT_TIMEOUT).until(() -> count(
+                "SELECT count(*) FROM subscription_projection WHERE organization_id = ? AND status = 'EXPIRED'",
+                organizationId) == 1);
+    }
+
+    @Entonces("el mensaje dice {string}")
+    public void messageSays(String text) throws Exception {
+        assertThat(session.body().path("message").asText()).contains(text);
+    }
+
     @Dado("que {string} inició sesión con la contraseña {string}")
     public void signedIn(String email, String password) {
         session.accessToken(issuer.issue(user(email)).value());

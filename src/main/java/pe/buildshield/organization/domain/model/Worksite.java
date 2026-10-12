@@ -73,6 +73,11 @@ public class Worksite {
         }
     }
 
+    /** Obra activa en esa fecha: sin fecha de fin o con la fecha de fin todavía no vencida. */
+    public boolean activeOn(LocalDate day) {
+        return endDate == null || !endDate.isBefore(day);
+    }
+
     public UUID id() {
         return id;
     }

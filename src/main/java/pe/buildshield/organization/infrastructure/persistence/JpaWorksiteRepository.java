@@ -5,6 +5,7 @@ import org.springframework.stereotype.Repository;
 import pe.buildshield.organization.domain.model.Worksite;
 import pe.buildshield.organization.domain.model.WorksiteRepository;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
@@ -36,6 +37,11 @@ class JpaWorksiteRepository implements WorksiteRepository {
     public List<Worksite> findAllById(Collection<UUID> ids) {
         return jpa.findAllById(ids).stream().map(WorksiteJpaEntity::toDomain)
                 .sorted(Comparator.comparing(Worksite::name)).toList();
+    }
+
+    @Override
+    public long countActive(LocalDate day) {
+        return jpa.countActive(day);
     }
 
     @Override

@@ -1,5 +1,6 @@
 package pe.buildshield.organization.domain.model;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -13,6 +14,9 @@ public interface WorksiteRepository {
     List<Worksite> findAll();
 
     List<Worksite> findAllById(Collection<UUID> ids);
+
+    /** Obras de la organización activas en esa fecha (sin fecha de fin o con fin no vencido). */
+    long countActive(LocalDate day);
 
     Worksite save(Worksite worksite);
 }

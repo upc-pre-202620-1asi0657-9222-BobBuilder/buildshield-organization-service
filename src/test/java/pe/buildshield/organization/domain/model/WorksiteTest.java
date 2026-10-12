@@ -18,6 +18,16 @@ class WorksiteTest {
     private static final LocalDate JUN_30 = LocalDate.of(2027, 6, 30);
 
     @Test
+    void a_worksite_is_active_until_its_end_date_inclusive_or_forever_without_one() {
+        Worksite open = Worksite.register("Abierta", LIMA, LocalDate.of(2026, 1, 1), null);
+        Worksite closing = Worksite.register("Cierra", LIMA, LocalDate.of(2026, 1, 1), LocalDate.of(2026, 10, 8));
+
+        assertThat(open.activeOn(LocalDate.of(2030, 1, 1))).isTrue();
+        assertThat(closing.activeOn(LocalDate.of(2026, 10, 8))).isTrue();
+        assertThat(closing.activeOn(LocalDate.of(2026, 10, 9))).isFalse();
+    }
+
+    @Test
     void registers_with_location_and_dates() {
         Worksite worksite = Worksite.register("  Torre Norte ", LIMA, NOV_1, JUN_30);
 

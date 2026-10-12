@@ -59,6 +59,38 @@ public final class TestOrganizations {
         }
     }
 
+    /**
+     * Evento de subscription ({@code SubscriptionActivated}, {@code SubscriptionExpired}, ...) con el estado de la
+     * suscripción, como lo publica su outbox.
+     */
+    public static String subscriptionEvent(ObjectMapper json, String eventType, UUID organizationId, String plan,
+            String status, Integer maxActiveWorksites, Instant occurredAt) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("organizationId", organizationId);
+        payload.put("subscriptionId", UUID.randomUUID());
+        payload.put("plan", plan);
+        payload.put("status", status);
+        payload.put("validUntil", occurredAt.plusSeconds(30L * 86_400).toString());
+        payload.put("billingPeriod", "FREE".equals(plan) ? null : "MONTHLY");
+        payload.put("maxActiveWorksites", maxActiveWorksites);
+        payload.put("reason", "PAYMENT_CONFIRMED");
+        Map<String, Object> envelope = new LinkedHashMap<>();
+        envelope.put("eventId", UUID.randomUUID());
+        envelope.put("eventType", eventType);
+        envelope.put("occurredAt", occurredAt.toString());
+        envelope.put("organizationId", organizationId);
+        envelope.put("aggregateType", "SUBSCRIPTION");
+        envelope.put("aggregateId", payload.get("subscriptionId").toString());
+        envelope.put("actorId", null);
+        envelope.put("version", 1);
+        envelope.put("payload", payload);
+        try {
+            return json.writeValueAsString(envelope);
+        } catch (Exception ex) {
+            throw new IllegalStateException(ex);
+        }
+    }
+
     public static String organizationRegistered(ObjectMapper json, UUID organizationId, String ruc, String legalName,
             UUID adminUserId, String adminEmail) {
         Map<String, Object> payload = new LinkedHashMap<>();

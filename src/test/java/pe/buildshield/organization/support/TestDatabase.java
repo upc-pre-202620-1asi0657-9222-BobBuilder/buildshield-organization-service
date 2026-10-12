@@ -10,7 +10,7 @@ public final class TestDatabase {
 
     /** Tablas del servicio, sin el historial de Flyway. */
     public static final List<String> TABLES = List.of("staff_assignments", "materials", "warehouses", "worksites",
-            "organizations", "user_projection", "outbox_events",
+            "organizations", "user_projection", "subscription_projection", "outbox_events",
             "processed_events");
 
     private TestDatabase() {

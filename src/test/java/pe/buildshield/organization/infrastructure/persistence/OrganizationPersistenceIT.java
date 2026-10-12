@@ -9,6 +9,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import pe.buildshield.organization.shared.tenant.TenantContext;
 import pe.buildshield.organization.shared.tenant.TenantInfo;
 import pe.buildshield.organization.application.StaffDirectory;
+import pe.buildshield.organization.application.SubscriptionPlans;
 import pe.buildshield.organization.domain.model.Location;
 import pe.buildshield.organization.domain.model.Material;
 import pe.buildshield.organization.domain.model.MaterialRepository;
@@ -51,6 +52,9 @@ class OrganizationPersistenceIT {
 
     @Autowired
     StaffDirectory staffDirectory;
+
+    @Autowired
+    JdbcSubscriptionProjection subscriptions;
 
     @Autowired
     TransactionTemplate tx;
@@ -121,6 +125,40 @@ class OrganizationPersistenceIT {
         assertThat(in(otra, () -> materials.findById(cement.id()))).isEmpty();
         assertThat(in(otra, () -> materials.findBySku(new Sku("CEM-001")))).isEmpty();
         assertThat(in(andina, () -> materials.findBySku(new Sku("cem-001")))).isPresent();
+    }
+
+    @Test
+    void only_worksites_without_end_date_or_not_finished_count_as_active() {
+        LocalDate today = LocalDate.of(2026, 10, 11);
+        Location lima = new Location("Av. Principal 100", "Miraflores", "Lima", null, null);
+        in(andina, () -> worksites.save(Worksite.register("Abierta", lima, LocalDate.of(2026, 1, 1), null)));
+        in(andina, () -> worksites.save(Worksite.register("Hasta hoy", lima, LocalDate.of(2026, 1, 1), today)));
+        in(andina, () -> worksites.save(Worksite.register("Terminada", lima, LocalDate.of(2026, 1, 1),
+                today.minusDays(1))));
+        in(otra, () -> worksites.save(Worksite.register("De otra", lima, LocalDate.of(2026, 1, 1), null)));
+
+        Long active = in(andina, () -> worksites.countActive(today));
+        assertThat(active).isEqualTo(2L);
+    }
+
+    @Test
+    void the_plan_copy_keeps_the_newest_event_and_the_quota_lock_works_inside_a_transaction() {
+        Instant now = Instant.now();
+        assertThat(subscriptions.apply(andina.organizationId(), "PLUS", "ACTIVE", 5, now, now)).isTrue();
+        assertThat(subscriptions.apply(andina.organizationId(), "FREE", "TRIAL", null, null, now.minusSeconds(60)))
+                .isFalse();
+
+        var plan = in(andina, () -> subscriptions.current());
+        assertThat(plan).contains(new SubscriptionPlans.PlanLimits("PLUS", "ACTIVE", 5));
+        var none = in(otra, () -> subscriptions.current());
+        assertThat(none).isEmpty();
+        assertThat(subscriptions.apply(andina.organizationId(), "PLUS", "EXPIRED", 5, now, now.plusSeconds(1))).isTrue();
+        assertThat(subscriptions.find(andina.organizationId()).orElseThrow().readOnly()).isTrue();
+        Boolean locked = in(andina, () -> {
+            subscriptions.lockActiveWorksiteQuota();
+            return true;
+        });
+        assertThat(locked).isTrue();
     }
 
     private <T> T in(TenantInfo tenant, Supplier<T> work) {

@@ -158,6 +158,31 @@ class OrganizationMessagingIT {
         assertThat(jdbc.queryForObject("SELECT count(*) FROM processed_events", Long.class)).isEqualTo(3);
     }
 
+    @Test
+    void subscription_events_keep_the_local_plan_copy_and_an_old_event_does_not_win() {
+        UUID organizationId = UUID.randomUUID();
+        java.time.Instant now = java.time.Instant.now();
+
+        kafka.send(Topics.SUBSCRIPTION, organizationId.toString(), TestOrganizations.subscriptionEvent(json,
+                "SubscriptionActivated", organizationId, "PLUS", "ACTIVE", 5, now));
+        kafka.send(Topics.SUBSCRIPTION, organizationId.toString(), TestOrganizations.subscriptionEvent(json,
+                "SubscriptionActivated", organizationId, "FREE", "TRIAL", null, now.minusSeconds(3600)));
+        kafka.send(Topics.SUBSCRIPTION, organizationId.toString(), TestOrganizations.subscriptionEvent(json,
+                "SubscriptionCheckoutAbandoned", organizationId, "PRO", "ACTIVE", null, now.plusSeconds(1)));
+
+        await().atMost(Duration.ofSeconds(30)).until(() -> jdbc.queryForObject(
+                "SELECT count(*) FROM processed_events", Long.class) == 3);
+        assertThat(jdbc.queryForMap("SELECT plan, status, max_active_worksites FROM subscription_projection "
+                + "WHERE organization_id = ?", organizationId))
+                .containsEntry("plan", "PLUS").containsEntry("status", "ACTIVE")
+                .containsEntry("max_active_worksites", 5);
+
+        kafka.send(Topics.SUBSCRIPTION, organizationId.toString(), TestOrganizations.subscriptionEvent(json,
+                "SubscriptionExpired", organizationId, "PLUS", "ACTIVE", 5, now.plusSeconds(60)));
+        await().atMost(Duration.ofSeconds(30)).until(() -> "EXPIRED".equals(jdbc.queryForObject(
+                "SELECT status FROM subscription_projection WHERE organization_id = ?", String.class, organizationId)));
+    }
+
     private static JsonNode find(List<JsonNode> events, String type, UUID aggregateId) {
         return events.stream()
                 .filter(event -> event.get("eventType").asText().equals(type)

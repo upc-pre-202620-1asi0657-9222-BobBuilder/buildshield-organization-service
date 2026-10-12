@@ -68,3 +68,5 @@ buildshield:
     enabled: false
   messaging:
     topic: buildshield.organization
+    # Consume buildshield.iam (organizaciones y usuarios) y buildshield.subscription (plan: límite de obras activas
+    # del plan Plus y cuenta en solo lectura al vencer la suscripción).

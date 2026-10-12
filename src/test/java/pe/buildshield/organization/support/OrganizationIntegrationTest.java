@@ -19,7 +19,11 @@ import java.lang.annotation.Target;
 @SpringBootTest
 @ActiveProfiles("test")
 @Import(ContainersConfig.class)
-@EmbeddedKafka(kraft = true, partitions = 3, topics = {"buildshield.organization", "buildshield.iam"},
-        bootstrapServersProperty = "spring.kafka.bootstrap-servers")
+@EmbeddedKafka(kraft = true, partitions = 3, topics = {"buildshield.organization", "buildshield.iam",
+        "buildshield.subscription"},
+        bootstrapServersProperty = "spring.kafka.bootstrap-servers",
+        // Un solo segmento pequeño para los offsets de los grupos: el grupo se forma en segundos aunque el disco sea lento.
+        brokerProperties = {"offsets.topic.num.partitions=1", "offsets.topic.replication.factor=1",
+                "log.index.size.max.bytes=1048576"})
 public @interface OrganizationIntegrationTest {
 }

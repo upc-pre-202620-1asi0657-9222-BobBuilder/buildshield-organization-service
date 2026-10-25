@@ -108,7 +108,7 @@ class OrganizationMessagingIT {
                 "LocationRegistered", "LocationRegistered", "LocationUpdated", "LocationUpdated",
                 "MaterialRegistered", "StaffAssigned", "StaffUnassigned");
         JsonNode worksite = find(events, "LocationRegistered", ids[0]);
-        assertThat(worksite.get("aggregateType").asText()).isEqualTo("LOCATION");
+        assertThat(worksite.get("aggregateType").asText()).isEqualTo("Location");
         assertThat(worksite.get("version").asInt()).isEqualTo(1);
         assertThat(worksite.get("actorId").asText()).isEqualTo(admin.userId().toString());
         assertThat(worksite.at("/payload/type").asText()).isEqualTo("WORKSITE");
@@ -146,9 +146,9 @@ class OrganizationMessagingIT {
                 adminId)));
         await().atMost(Duration.ofSeconds(30)).until(() -> jdbc.queryForObject(
                 "SELECT count(*) FROM organizations WHERE id = ?", Long.class, organizationId) == 1);
-        assertThat(jdbc.queryForMap("SELECT ruc, legal_name FROM organizations WHERE id = ?", organizationId))
+        assertThat(jdbc.queryForMap("SELECT ruc, business_name FROM organizations WHERE id = ?", organizationId))
                 .containsEntry("ruc", "20123456789")
-                .containsEntry("legal_name", "Constructora Andina SAC");
+                .containsEntry("business_name", "Constructora Andina SAC");
         assertThat(jdbc.queryForMap("SELECT organization_id, role, email, full_name FROM user_projection WHERE user_id = ?",
                 adminId))
                 .containsEntry("organization_id", organizationId)

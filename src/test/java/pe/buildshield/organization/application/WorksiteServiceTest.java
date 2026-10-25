@@ -45,7 +45,7 @@ class WorksiteServiceTest {
 
         assertThat(view.id()).isEqualTo(ID);
         assertThat(view.name()).isEqualTo("Torre Norte");
-        verify(outbox).append(eq("LocationRegistered"), eq("LOCATION"), eq(ID),
+        verify(outbox).append(eq("LocationRegistered"), eq(ID),
                 eq(new OrganizationEvents.LocationChanged(ID, "WORKSITE", "Torre Norte", "Av. Javier Prado 123", true,
                         "San Isidro", "Lima", null, LocalDate.of(2026, 11, 1), LocalDate.of(2027, 6, 30))));
     }
@@ -81,7 +81,7 @@ class WorksiteServiceTest {
 
         assertThat(view.location()).isEqualTo(new Location("Av. Javier Prado 456", "San Isidro", "Lima", -12.09, -77.04));
         assertThat(view.endDate()).isEqualTo(LocalDate.of(2027, 12, 31));
-        verify(outbox).append(eq("LocationUpdated"), eq("LOCATION"), eq(ID), any());
+        verify(outbox).append(eq("LocationUpdated"), eq(ID), any());
     }
 
     @Test
@@ -121,7 +121,7 @@ class WorksiteServiceTest {
                         .extracting(ErrorDetail::message).containsExactly("PLUS", "5", "5"));
         verify(plans).lockActiveWorksiteQuota();
         verify(worksites, never()).save(any());
-        verify(outbox, never()).append(any(), any(), any(), any());
+        verify(outbox, never()).append(any(), any(), any());
     }
 
     @Test

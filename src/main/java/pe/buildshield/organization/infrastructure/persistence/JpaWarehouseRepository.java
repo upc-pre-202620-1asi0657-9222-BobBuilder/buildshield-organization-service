@@ -1,6 +1,5 @@
 package pe.buildshield.organization.infrastructure.persistence;
 
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 import pe.buildshield.organization.domain.model.Warehouse;
 import pe.buildshield.organization.domain.model.WarehouseRepository;
@@ -14,40 +13,42 @@ import java.util.UUID;
 @Repository
 class JpaWarehouseRepository implements WarehouseRepository {
 
-    private final SpringDataWarehouseRepository jpa;
+    private final SpringDataLocationRepository jpa;
 
-    JpaWarehouseRepository(SpringDataWarehouseRepository jpa) {
+    JpaWarehouseRepository(SpringDataLocationRepository jpa) {
         this.jpa = jpa;
     }
 
     @Override
     public Optional<Warehouse> findById(UUID id) {
-        return jpa.findById(id).map(WarehouseJpaEntity::toDomain);
+        return jpa.findByIdAndType(id, LocationJpaEntity.WAREHOUSE).map(LocationJpaEntity::toWarehouse);
     }
 
     @Override
     public List<Warehouse> findAll() {
-        return jpa.findAll(Sort.by("name")).stream().map(WarehouseJpaEntity::toDomain).toList();
+        return jpa.findAllByTypeOrderByName(LocationJpaEntity.WAREHOUSE).stream().map(LocationJpaEntity::toWarehouse)
+                .toList();
     }
 
     @Override
     public List<Warehouse> findAllActive() {
-        return jpa.findAllByActiveTrueOrderByName().stream().map(WarehouseJpaEntity::toDomain).toList();
+        return jpa.findAllByTypeAndActiveTrueOrderByName(LocationJpaEntity.WAREHOUSE).stream()
+                .map(LocationJpaEntity::toWarehouse).toList();
     }
 
     @Override
     public List<Warehouse> findAllById(Collection<UUID> ids) {
-        return jpa.findAllById(ids).stream().map(WarehouseJpaEntity::toDomain)
+        return jpa.findAllByTypeAndIdIn(LocationJpaEntity.WAREHOUSE, ids).stream().map(LocationJpaEntity::toWarehouse)
                 .sorted(Comparator.comparing(Warehouse::name)).toList();
     }
 
     @Override
     public Warehouse save(Warehouse warehouse) {
         if (warehouse.id() == null) {
-            return jpa.saveAndFlush(new WarehouseJpaEntity(warehouse)).toDomain();
+            return jpa.saveAndFlush(LocationJpaEntity.of(warehouse)).toWarehouse();
         }
-        WarehouseJpaEntity entity = Versions.load(jpa, warehouse.id(), warehouse.version(), WarehouseJpaEntity.class);
+        LocationJpaEntity entity = Versions.load(jpa, warehouse.id(), warehouse.version(), LocationJpaEntity.class);
         entity.apply(warehouse);
-        return jpa.saveAndFlush(entity).toDomain();
+        return jpa.saveAndFlush(entity).toWarehouse();
     }
 }

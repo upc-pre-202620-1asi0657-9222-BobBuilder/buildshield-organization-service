@@ -63,8 +63,8 @@ class AssignmentServiceTest {
         assertThat(view.id()).isEqualTo(ASSIGNMENT);
         assertThat(view.active()).isTrue();
         assertThat(view.assignedAt()).isEqualTo(NOW);
-        verify(outbox).append("StaffAssigned", "ASSIGNMENT", ASSIGNMENT,
-                new OrganizationEvents.StaffAssignmentChanged(ASSIGNMENT, JORGE, TORRE, "WORKSITE"));
+        verify(outbox).append("StaffAssigned", ASSIGNMENT,
+                new OrganizationEvents.StaffAssignmentChanged(ASSIGNMENT, JORGE, TORRE, "WORKSITE", "SITE_MANAGER"));
     }
 
     @Test
@@ -124,7 +124,7 @@ class AssignmentServiceTest {
 
         when(assignments.existsActive(JORGE, TORRE)).thenReturn(false);
         when(assignments.save(any())).thenThrow(new DataIntegrityViolationException("x", new SQLException(
-                "duplicate key value violates unique constraint \"uk_staff_assignments_active_worksite\"")));
+                "duplicate key value violates unique constraint \"uk_location_assignments_active\"")));
         assertThatThrownBy(() -> service.assign(new AssignmentService.AssignStaff(JORGE, SiteType.WORKSITE, TORRE)))
                 .isInstanceOf(ConflictException.class);
     }
@@ -154,8 +154,8 @@ class AssignmentServiceTest {
         AssignmentService.AssignmentView ended = service.update(ASSIGNMENT, new AssignmentService.UpdateAssignment(false));
         assertThat(ended.active()).isFalse();
         assertThat(ended.endedAt()).isEqualTo(NOW);
-        verify(outbox).append("StaffUnassigned", "ASSIGNMENT", ASSIGNMENT,
-                new OrganizationEvents.StaffAssignmentChanged(ASSIGNMENT, JORGE, TORRE, "WORKSITE"));
+        verify(outbox).append("StaffUnassigned", ASSIGNMENT,
+                new OrganizationEvents.StaffAssignmentChanged(ASSIGNMENT, JORGE, TORRE, "WORKSITE", "SITE_MANAGER"));
         assertThatThrownBy(() -> service.update(UUID.randomUUID(), new AssignmentService.UpdateAssignment(false)))
                 .isInstanceOf(ResourceNotFoundException.class);
     }

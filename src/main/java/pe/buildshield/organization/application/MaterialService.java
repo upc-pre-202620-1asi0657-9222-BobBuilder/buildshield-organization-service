@@ -10,6 +10,7 @@ import pe.buildshield.organization.domain.model.Material;
 import pe.buildshield.organization.domain.model.MaterialRepository;
 import pe.buildshield.organization.domain.model.Sku;
 import pe.buildshield.organization.domain.model.UnitOfMeasure;
+import pe.buildshield.organization.domain.model.UnitWeight;
 import pe.buildshield.organization.domain.model.WasteTolerance;
 
 import java.math.BigDecimal;
@@ -40,7 +41,7 @@ public class MaterialService {
     public MaterialView register(RegisterMaterial command) {
         Sku sku = new Sku(command.sku());
         Material material = Material.register(sku, command.name(), command.unit(),
-                new WasteTolerance(command.wasteTolerancePercent()));
+                new WasteTolerance(command.wasteTolerancePercent()), unitWeight(command.unitWeightKg()));
         if (materials.existsBySku(sku)) {
             throw skuAlreadyExists(sku);
         }
@@ -69,13 +70,18 @@ public class MaterialService {
         Material material = materials.findById(id).orElseThrow(() -> notFound(id));
         material.update(command.name(), command.unit(),
                 command.wasteTolerancePercent() == null ? null : new WasteTolerance(command.wasteTolerancePercent()),
-                command.active());
+                command.unitWeightKg() == null ? null : new UnitWeight(command.unitWeightKg()), command.active());
         return MaterialView.of(publish(OrganizationEvents.MATERIAL_UPDATED, materials.save(material)));
     }
 
     private Material publish(String eventType, Material material) {
-        outbox.append(eventType, OrganizationEvents.MATERIAL, material.id(), OrganizationEvents.MaterialChanged.of(material));
+        outbox.append(eventType, material.id(), OrganizationEvents.MaterialChanged.of(material));
         return material;
+    }
+
+    /** Sin peso informado queda en cero: los clientes anteriores al peso unitario siguen registrando materiales. */
+    private static UnitWeight unitWeight(BigDecimal kg) {
+        return kg == null ? UnitWeight.ZERO : new UnitWeight(kg);
     }
 
     private static ConflictException skuAlreadyExists(Sku sku) {
@@ -86,19 +92,30 @@ public class MaterialService {
         return new ResourceNotFoundException("MATERIAL_NOT_FOUND", "El material " + id + " no existe");
     }
 
-    public record RegisterMaterial(String sku, String name, UnitOfMeasure unit, BigDecimal wasteTolerancePercent) {
+    /** {@code unitWeightKg} nulo: cero. */
+    public record RegisterMaterial(String sku, String name, UnitOfMeasure unit, BigDecimal wasteTolerancePercent,
+            BigDecimal unitWeightKg) {
+
+        public RegisterMaterial(String sku, String name, UnitOfMeasure unit, BigDecimal wasteTolerancePercent) {
+            this(sku, name, unit, wasteTolerancePercent, null);
+        }
     }
 
     /** Campos nulos: no cambian. El SKU no se modifica. */
-    public record UpdateMaterial(String name, UnitOfMeasure unit, BigDecimal wasteTolerancePercent, Boolean active) {
+    public record UpdateMaterial(String name, UnitOfMeasure unit, BigDecimal wasteTolerancePercent,
+            BigDecimal unitWeightKg, Boolean active) {
+
+        public UpdateMaterial(String name, UnitOfMeasure unit, BigDecimal wasteTolerancePercent, Boolean active) {
+            this(name, unit, wasteTolerancePercent, null, active);
+        }
     }
 
     public record MaterialView(UUID id, String sku, String name, UnitOfMeasure unit, BigDecimal wasteTolerancePercent,
-            boolean active) {
+            BigDecimal unitWeightKg, boolean active) {
 
         static MaterialView of(Material material) {
             return new MaterialView(material.id(), material.sku().value(), material.name(), material.unit(),
-                    material.wasteTolerance().percent(), material.active());
+                    material.wasteTolerance().percent(), material.unitWeightKg(), material.active());
         }
     }
 }

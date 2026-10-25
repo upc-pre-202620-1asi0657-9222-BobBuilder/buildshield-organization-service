@@ -23,6 +23,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import pe.buildshield.organization.shared.error.ErrorResponse;
+import pe.buildshield.organization.application.OrganizationCommandService;
+import pe.buildshield.organization.application.OrganizationQueryService;
 import pe.buildshield.organization.application.WorksiteService;
 import pe.buildshield.organization.application.WorksiteService.WorksiteView;
 import pe.buildshield.organization.domain.model.Location;
@@ -38,10 +40,12 @@ import java.util.UUID;
 @SecurityRequirement(name = "bearer")
 class WorksitesController {
 
-    private final WorksiteService worksites;
+    private final OrganizationCommandService commands;
+    private final OrganizationQueryService queries;
 
-    WorksitesController(WorksiteService worksites) {
-        this.worksites = worksites;
+    WorksitesController(OrganizationCommandService commands, OrganizationQueryService queries) {
+        this.commands = commands;
+        this.queries = queries;
     }
 
     @PostMapping
@@ -56,7 +60,7 @@ class WorksitesController {
     @ApiResponse(responseCode = "403", description = "Solo el administrador registra obras",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     ResponseEntity<WorksiteResource> register(@Valid @RequestBody RegisterWorksiteRequest request) {
-        WorksiteView created = worksites.register(new WorksiteService.RegisterWorksite(request.name(),
+        WorksiteView created = commands.registerWorksite(new WorksiteService.RegisterWorksite(request.name(),
                 new Location(request.address(), request.district(), request.city(), request.latitude(), request.longitude()),
                 request.startDate(), request.endDate()));
         return ResponseEntity.created(URI.create("/api/v1/worksites/" + created.id())).body(WorksiteResource.of(created));
@@ -69,7 +73,7 @@ class WorksitesController {
             content = @Content(array = @ArraySchema(schema = @Schema(implementation = WorksiteResource.class)),
                     examples = @ExampleObject(value = OrganizationApiExamples.WORKSITES)))
     List<WorksiteResource> list() {
-        return worksites.list().stream().map(WorksiteResource::of).toList();
+        return queries.worksites().stream().map(WorksiteResource::of).toList();
     }
 
     @GetMapping("/{id}")
@@ -81,7 +85,7 @@ class WorksitesController {
     @ApiResponse(responseCode = "404", description = "No existe, es de otra organización o no está asignada al usuario",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     WorksiteResource get(@Parameter(description = "Id de la obra", example = OrganizationApiExamples.WORKSITE_ID) @PathVariable UUID id) {
-        return WorksiteResource.of(worksites.get(id));
+        return WorksiteResource.of(queries.worksite(id));
     }
 
     @PatchMapping("/{id}")
@@ -95,14 +99,14 @@ class WorksitesController {
     @ApiResponse(responseCode = "404", description = "No existe o es de otra organización",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     WorksiteResource update(@Parameter(description = "Id de la obra", example = OrganizationApiExamples.WORKSITE_ID) @PathVariable UUID id, @Valid @RequestBody UpdateWorksiteRequest request) {
-        return WorksiteResource.of(worksites.update(id, new WorksiteService.UpdateWorksite(request.name(),
+        return WorksiteResource.of(commands.updateWorksite(id, new WorksiteService.UpdateWorksite(request.name(),
                 request.address(), request.district(), request.city(), request.latitude(), request.longitude(),
                 request.startDate(), request.endDate())));
     }
 
     @Schema(description = "Datos de la obra")
     record RegisterWorksiteRequest(
-            @Schema(example = "Torre Norte") @NotBlank @Size(max = 150) String name,
+            @Schema(example = "Torre Norte") @NotBlank @Size(max = 120) String name,
             @Schema(example = "Av. Javier Prado 123") @NotBlank @Size(max = 200) String address,
             @Schema(example = "San Isidro") @NotBlank @Size(max = 100) String district,
             @Schema(example = "Lima") @NotBlank @Size(max = 100) String city,
@@ -114,7 +118,7 @@ class WorksitesController {
 
     @Schema(description = "Cambios de la obra; los campos ausentes no cambian")
     record UpdateWorksiteRequest(
-            @Size(max = 150) String name,
+            @Size(max = 120) String name,
             @Size(max = 200) String address,
             @Size(max = 100) String district,
             @Size(max = 100) String city,

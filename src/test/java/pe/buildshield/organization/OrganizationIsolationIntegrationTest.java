@@ -146,17 +146,17 @@ class OrganizationIsolationIntegrationTest {
     }
 
     private void organizationAIsUntouched() {
-        assertThat(jdbc.queryForObject("SELECT name FROM worksites WHERE id = ?", String.class, worksiteA))
+        assertThat(jdbc.queryForObject("SELECT name FROM locations WHERE id = ?", String.class, worksiteA))
                 .isEqualTo("Torre Norte A");
-        assertThat(jdbc.queryForObject("SELECT active FROM warehouses WHERE id = ?", Boolean.class, warehouseA))
+        assertThat(jdbc.queryForObject("SELECT active FROM locations WHERE id = ?", Boolean.class, warehouseA))
                 .isTrue();
-        assertThat(jdbc.queryForObject("SELECT waste_tolerance_percent FROM materials WHERE id = ?",
+        assertThat(jdbc.queryForObject("SELECT tolerance_pct FROM materials WHERE id = ?",
                 java.math.BigDecimal.class, materialA)).isEqualByComparingTo("2.5");
-        assertThat(jdbc.queryForObject("SELECT ended_at IS NULL FROM staff_assignments WHERE id = ?",
+        assertThat(jdbc.queryForObject("SELECT ended_at IS NULL FROM location_assignments WHERE id = ?",
                 Boolean.class, assignmentA)).isTrue();
         assertThat(jdbc.queryForObject("""
-                SELECT count(*) FROM staff_assignments
-                WHERE worksite_id = ? OR warehouse_id = ? OR user_id = ?""", Long.class, worksiteA, warehouseA, siteManagerA))
+                SELECT count(*) FROM location_assignments
+                WHERE location_id = ? OR location_id = ? OR user_id = ?""", Long.class, worksiteA, warehouseA, siteManagerA))
                 .as("solo la asignación propia de A").isEqualTo(1);
     }
 

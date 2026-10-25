@@ -41,7 +41,7 @@ class WarehouseServiceTest {
 
         assertThat(view).isEqualTo(new WarehouseService.WarehouseView(ID, "Acopio Chosica",
                 WarehouseType.COLLECTION_CENTER, "km 34", true));
-        verify(outbox).append(eq("LocationRegistered"), eq("LOCATION"), eq(ID),
+        verify(outbox).append(eq("LocationRegistered"), eq(ID),
                 eq(new OrganizationEvents.LocationChanged(ID, "WAREHOUSE", "Acopio Chosica", "km 34", true, null, null,
                         "COLLECTION_CENTER", null, null)));
     }
@@ -59,7 +59,7 @@ class WarehouseServiceTest {
                     assertThat(view.name()).isEqualTo("Central 2");
                     assertThat(view.active()).isTrue();
                 });
-        verify(outbox, times(3)).append(eq("LocationUpdated"), eq("LOCATION"), eq(ID), any());
+        verify(outbox, times(3)).append(eq("LocationUpdated"), eq(ID), any());
     }
 
     @Test

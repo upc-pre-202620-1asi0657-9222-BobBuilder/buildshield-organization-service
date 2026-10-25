@@ -12,27 +12,27 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Repository
-class JpaStaffAssignmentRepository implements StaffAssignmentRepository {
+class JpaLocationAssignmentRepository implements StaffAssignmentRepository {
 
-    private final SpringDataStaffAssignmentRepository jpa;
+    private final SpringDataLocationAssignmentRepository jpa;
 
-    JpaStaffAssignmentRepository(SpringDataStaffAssignmentRepository jpa) {
+    JpaLocationAssignmentRepository(SpringDataLocationAssignmentRepository jpa) {
         this.jpa = jpa;
     }
 
     @Override
     public Optional<StaffAssignment> findById(UUID id) {
-        return jpa.findById(id).map(StaffAssignmentJpaEntity::toDomain);
+        return jpa.findById(id).map(LocationAssignmentJpaEntity::toDomain);
     }
 
     @Override
     public List<StaffAssignment> findAll() {
-        return jpa.findAllByOrderByAssignedAt().stream().map(StaffAssignmentJpaEntity::toDomain).toList();
+        return jpa.findAllByOrderByAssignedAt().stream().map(LocationAssignmentJpaEntity::toDomain).toList();
     }
 
     @Override
     public List<StaffAssignment> findByUserId(UUID userId) {
-        return jpa.findAllByUserIdOrderByAssignedAt(userId).stream().map(StaffAssignmentJpaEntity::toDomain).toList();
+        return jpa.findAllByUserIdOrderByAssignedAt(userId).stream().map(LocationAssignmentJpaEntity::toDomain).toList();
     }
 
     @Override
@@ -44,17 +44,17 @@ class JpaStaffAssignmentRepository implements StaffAssignmentRepository {
     public Set<UUID> activeSiteIds(UUID userId, SiteType siteType) {
         return jpa.findAllByUserIdAndEndedAtIsNull(userId).stream()
                 .filter(assignment -> assignment.siteType() == siteType)
-                .map(StaffAssignmentJpaEntity::siteId)
+                .map(LocationAssignmentJpaEntity::siteId)
                 .collect(Collectors.toSet());
     }
 
     @Override
     public StaffAssignment save(StaffAssignment assignment) {
         if (assignment.id() == null) {
-            return jpa.saveAndFlush(new StaffAssignmentJpaEntity(assignment)).toDomain();
+            return jpa.saveAndFlush(new LocationAssignmentJpaEntity(assignment)).toDomain();
         }
-        StaffAssignmentJpaEntity entity = Versions.load(jpa, assignment.id(), assignment.version(),
-                StaffAssignmentJpaEntity.class);
+        LocationAssignmentJpaEntity entity = Versions.load(jpa, assignment.id(), assignment.version(),
+                LocationAssignmentJpaEntity.class);
         entity.apply(assignment);
         return jpa.saveAndFlush(entity).toDomain();
     }

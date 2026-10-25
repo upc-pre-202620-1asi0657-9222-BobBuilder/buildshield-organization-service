@@ -48,6 +48,7 @@ final class OrganizationApiExamples {
               "name": "Cemento Portland tipo I",
               "unit": "BAG",
               "wasteTolerancePercent": 2.5,
+              "unitWeightKg": 42.500,
               "active": true
             }""";
 

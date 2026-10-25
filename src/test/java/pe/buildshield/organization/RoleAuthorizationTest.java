@@ -16,6 +16,8 @@ import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 import pe.buildshield.organization.application.AssignmentService;
 import pe.buildshield.organization.application.MaterialService;
+import pe.buildshield.organization.application.OrganizationCommandService;
+import pe.buildshield.organization.application.OrganizationQueryService;
 import pe.buildshield.organization.application.OrganizationService;
 import pe.buildshield.organization.application.WarehouseService;
 import pe.buildshield.organization.application.WorksiteService;
@@ -78,50 +80,41 @@ class RoleAuthorizationTest {
     RevokedTokenStore revokedTokens;
 
     @MockitoBean
-    OrganizationService organizationService;
+    OrganizationCommandService commands;
 
     @MockitoBean
-    WorksiteService worksiteService;
-
-    @MockitoBean
-    WarehouseService warehouseService;
-
-    @MockitoBean
-    MaterialService materialService;
-
-    @MockitoBean
-    AssignmentService assignmentService;
+    OrganizationQueryService queries;
 
     @BeforeEach
     void stubServices() {
         OrganizationService.OrganizationView organization = new OrganizationService.OrganizationView(ANY_ID,
                 "20123456789", "Andina");
-        when(organizationService.current()).thenReturn(organization);
-        when(organizationService.get(any())).thenReturn(organization);
+        when(queries.currentOrganization()).thenReturn(organization);
+        when(queries.organization(any())).thenReturn(organization);
         WorksiteService.WorksiteView worksite = new WorksiteService.WorksiteView(ANY_ID, "Torre",
                 new Location("Av. 1", "Lince", "Lima", null, null), LocalDate.of(2026, 11, 1), null);
-        when(worksiteService.register(any())).thenReturn(worksite);
-        when(worksiteService.update(any(), any())).thenReturn(worksite);
-        when(worksiteService.get(any())).thenReturn(worksite);
-        when(worksiteService.list()).thenReturn(List.of(worksite));
+        when(commands.registerWorksite(any())).thenReturn(worksite);
+        when(commands.updateWorksite(any(), any())).thenReturn(worksite);
+        when(queries.worksite(any())).thenReturn(worksite);
+        when(queries.worksites()).thenReturn(List.of(worksite));
         WarehouseService.WarehouseView warehouse = new WarehouseService.WarehouseView(ANY_ID, "Central",
                 WarehouseType.WAREHOUSE, "Av. 1", true);
-        when(warehouseService.register(any())).thenReturn(warehouse);
-        when(warehouseService.update(any(), any())).thenReturn(warehouse);
-        when(warehouseService.get(any())).thenReturn(warehouse);
-        when(warehouseService.list()).thenReturn(List.of(warehouse));
+        when(commands.registerWarehouse(any())).thenReturn(warehouse);
+        when(commands.updateWarehouse(any(), any())).thenReturn(warehouse);
+        when(queries.warehouse(any())).thenReturn(warehouse);
+        when(queries.warehouses()).thenReturn(List.of(warehouse));
         MaterialService.MaterialView material = new MaterialService.MaterialView(ANY_ID, "CEM-001", "Cemento",
-                UnitOfMeasure.BAG, new BigDecimal("2.50"), true);
-        when(materialService.register(any())).thenReturn(material);
-        when(materialService.update(any(), any())).thenReturn(material);
-        when(materialService.get(any())).thenReturn(material);
-        when(materialService.list()).thenReturn(List.of(material));
+                UnitOfMeasure.BAG, new BigDecimal("2.50"), new BigDecimal("42.500"), true);
+        when(commands.registerMaterial(any())).thenReturn(material);
+        when(commands.updateMaterial(any(), any())).thenReturn(material);
+        when(queries.material(any())).thenReturn(material);
+        when(queries.materials()).thenReturn(List.of(material));
         AssignmentService.AssignmentView assignment = new AssignmentService.AssignmentView(ANY_ID, ANY_ID,
                 SiteType.WORKSITE, ANY_ID, Instant.now(), null, true);
-        when(assignmentService.assign(any())).thenReturn(assignment);
-        when(assignmentService.update(any(), any())).thenReturn(assignment);
-        when(assignmentService.get(any())).thenReturn(assignment);
-        when(assignmentService.list()).thenReturn(List.of(assignment));
+        when(commands.assignStaff(any())).thenReturn(assignment);
+        when(commands.updateAssignment(any(), any())).thenReturn(assignment);
+        when(queries.assignment(any())).thenReturn(assignment);
+        when(queries.assignments()).thenReturn(List.of(assignment));
     }
 
     @ParameterizedTest(name = "{0} {1} como {3} -> {4}")

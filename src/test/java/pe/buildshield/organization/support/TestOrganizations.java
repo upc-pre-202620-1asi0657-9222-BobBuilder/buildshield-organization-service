@@ -23,7 +23,7 @@ public final class TestOrganizations {
     /** Organización con su administrador; devuelve el contexto del administrador. */
     public static TenantInfo register(JdbcTemplate jdbc, String ruc, String legalName) {
         UUID organizationId = UUID.randomUUID();
-        jdbc.update("INSERT INTO organizations (id, ruc, legal_name, version, created_at) VALUES (?, ?, ?, 0, ?)",
+        jdbc.update("INSERT INTO organizations (id, ruc, business_name, version, created_at) VALUES (?, ?, ?, 0, ?)",
                 organizationId, ruc, legalName, Timestamp.from(Instant.now()));
         UUID admin = addUser(jdbc, organizationId, "admin@" + ruc + ".pe", "ADMINISTRATOR");
         return new TenantInfo(organizationId, admin, "ADMINISTRATOR");

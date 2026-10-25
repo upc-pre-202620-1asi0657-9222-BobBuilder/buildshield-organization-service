@@ -58,7 +58,7 @@ public class WarehouseService {
     }
 
     private Warehouse publish(String eventType, Warehouse warehouse) {
-        outbox.append(eventType, OrganizationEvents.LOCATION, warehouse.id(),
+        outbox.append(eventType, warehouse.id(),
                 OrganizationEvents.LocationChanged.of(warehouse));
         return warehouse;
     }

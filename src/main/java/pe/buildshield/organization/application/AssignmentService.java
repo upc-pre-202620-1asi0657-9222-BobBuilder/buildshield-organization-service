@@ -65,7 +65,7 @@ public class AssignmentService {
         try {
             return AssignmentView.of(publish(OrganizationEvents.STAFF_ASSIGNED, assignments.save(assignment)));
         } catch (DataIntegrityViolationException ex) {
-            if (String.valueOf(ex.getMostSpecificCause().getMessage()).contains("uk_staff_assignments_active")) {
+            if (String.valueOf(ex.getMostSpecificCause().getMessage()).contains("uk_location_assignments_active")) {
                 throw alreadyActive();
             }
             throw ex;
@@ -96,7 +96,7 @@ public class AssignmentService {
     }
 
     private StaffAssignment publish(String eventType, StaffAssignment assignment) {
-        outbox.append(eventType, OrganizationEvents.ASSIGNMENT, assignment.id(),
+        outbox.append(eventType, assignment.id(),
                 OrganizationEvents.StaffAssignmentChanged.of(assignment));
         return assignment;
     }

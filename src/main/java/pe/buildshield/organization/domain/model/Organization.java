@@ -10,7 +10,7 @@ import java.util.UUID;
 /** Empresa cliente de BuildShield. Su identificador es el {@code organization_id} de todos sus datos. */
 public class Organization {
 
-    static final int MAX_LEGAL_NAME = 200;
+    static final int MAX_LEGAL_NAME = 150;
 
     private final UUID id;
     private final Ruc ruc;
@@ -24,8 +24,8 @@ public class Organization {
 
     public static Organization register(UUID id, Ruc ruc, String legalName) {
         if (legalName == null || legalName.isBlank() || legalName.trim().length() > MAX_LEGAL_NAME) {
-            throw new ValidationException("INVALID_LEGAL_NAME", "La razón social es obligatoria (máximo 200 caracteres)",
-                    List.of(new ErrorDetail("legalName", "obligatoria, máximo 200 caracteres")));
+            throw new ValidationException("INVALID_LEGAL_NAME", "La razón social es obligatoria (máximo 150 caracteres)",
+                    List.of(new ErrorDetail("legalName", "obligatoria, máximo 150 caracteres")));
         }
         return new Organization(id, ruc, legalName.trim());
     }

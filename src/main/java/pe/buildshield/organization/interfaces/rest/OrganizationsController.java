@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import pe.buildshield.organization.application.OrganizationQueryService;
 import pe.buildshield.organization.application.OrganizationService;
 import pe.buildshield.organization.shared.error.ErrorResponse;
 
@@ -24,10 +25,10 @@ import java.util.UUID;
 @SecurityRequirement(name = "bearer")
 class OrganizationsController {
 
-    private final OrganizationService organizations;
+    private final OrganizationQueryService queries;
 
-    OrganizationsController(OrganizationService organizations) {
-        this.organizations = organizations;
+    OrganizationsController(OrganizationQueryService queries) {
+        this.queries = queries;
     }
 
     @GetMapping("/me")
@@ -41,7 +42,7 @@ class OrganizationsController {
     @ApiResponse(responseCode = "404", description = "La organización aún no llegó desde iam",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     OrganizationResource current() {
-        return OrganizationResource.of(organizations.current());
+        return OrganizationResource.of(queries.currentOrganization());
     }
 
     @GetMapping("/{id}")
@@ -54,7 +55,7 @@ class OrganizationsController {
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     OrganizationResource get(@Parameter(description = "Id de la organización",
             example = "3f2a1b4c-5d6e-4f70-8a9b-0c1d2e3f4a5b") @PathVariable UUID id) {
-        return OrganizationResource.of(organizations.get(id));
+        return OrganizationResource.of(queries.organization(id));
     }
 
     @Schema(description = "Organización (empresa cliente)")

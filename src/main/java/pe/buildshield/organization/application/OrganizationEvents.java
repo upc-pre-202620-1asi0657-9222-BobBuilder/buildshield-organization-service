@@ -23,9 +23,10 @@ public final class OrganizationEvents {
     public static final String STAFF_ASSIGNED = "StaffAssigned";
     public static final String STAFF_UNASSIGNED = "StaffUnassigned";
 
-    public static final String LOCATION = "LOCATION";
-    public static final String MATERIAL = "MATERIAL";
-    public static final String ASSIGNMENT = "ASSIGNMENT";
+    /** Tipo de agregado de cada evento en el sobre; {@code outbox_events} no lo guarda, se deduce del evento. */
+    public static final String LOCATION = "Location";
+    public static final String MATERIAL = "Material";
+    public static final String ASSIGNMENT = "Assignment";
 
     public static final String WORKSITE = "WORKSITE";
     public static final String WAREHOUSE = "WAREHOUSE";
@@ -57,21 +58,22 @@ public final class OrganizationEvents {
     }
 
     /** Material del catálogo registrado o cambiado. */
-    public record MaterialChanged(UUID materialId, String sku, String name, String unit, BigDecimal tolerancePercent,
-            boolean active) {
+    public record MaterialChanged(UUID materialId, String sku, String name, String unit, BigDecimal unitWeightKg,
+            BigDecimal tolerancePercent, boolean active) {
 
         static MaterialChanged of(Material material) {
             return new MaterialChanged(material.id(), material.sku().value(), material.name(), material.unit().name(),
-                    material.wasteTolerance().percent(), material.active());
+                    material.unitWeightKg(), material.wasteTolerance().percent(), material.active());
         }
     }
 
     /** Encargado asignado a una obra o almacén, o asignación terminada. */
-    public record StaffAssignmentChanged(UUID assignmentId, UUID userId, UUID locationId, String locationType) {
+    public record StaffAssignmentChanged(UUID assignmentId, UUID userId, UUID locationId, String locationType,
+            String role) {
 
         static StaffAssignmentChanged of(StaffAssignment assignment) {
             return new StaffAssignmentChanged(assignment.id(), assignment.userId(), assignment.siteId(),
-                    assignment.siteType().name());
+                    assignment.siteType().name(), assignment.siteType().assignableRole());
         }
     }
 }

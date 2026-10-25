@@ -21,6 +21,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import pe.buildshield.organization.shared.error.ErrorResponse;
+import pe.buildshield.organization.application.OrganizationCommandService;
+import pe.buildshield.organization.application.OrganizationQueryService;
 import pe.buildshield.organization.application.AssignmentService;
 import pe.buildshield.organization.application.AssignmentService.AssignmentView;
 import pe.buildshield.organization.domain.model.SiteType;
@@ -36,10 +38,12 @@ import java.util.UUID;
 @SecurityRequirement(name = "bearer")
 class AssignmentsController {
 
-    private final AssignmentService assignments;
+    private final OrganizationCommandService commands;
+    private final OrganizationQueryService queries;
 
-    AssignmentsController(AssignmentService assignments) {
-        this.assignments = assignments;
+    AssignmentsController(OrganizationCommandService commands, OrganizationQueryService queries) {
+        this.commands = commands;
+        this.queries = queries;
     }
 
     @PostMapping
@@ -56,7 +60,7 @@ class AssignmentsController {
     @ApiResponse(responseCode = "409", description = "Asignación activa repetida o almacén desactivado",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     ResponseEntity<AssignmentResource> assign(@Valid @RequestBody AssignRequest request) {
-        AssignmentView created = assignments.assign(
+        AssignmentView created = commands.assignStaff(
                 new AssignmentService.AssignStaff(request.userId(), request.siteType(), request.siteId()));
         return ResponseEntity.created(URI.create("/api/v1/assignments/" + created.id()))
                 .body(AssignmentResource.of(created));
@@ -70,7 +74,7 @@ class AssignmentsController {
             content = @Content(array = @ArraySchema(schema = @Schema(implementation = AssignmentResource.class)),
                     examples = @ExampleObject(value = OrganizationApiExamples.ASSIGNMENTS)))
     List<AssignmentResource> list() {
-        return assignments.list().stream().map(AssignmentResource::of).toList();
+        return queries.assignments().stream().map(AssignmentResource::of).toList();
     }
 
     @GetMapping("/{id}")
@@ -82,7 +86,7 @@ class AssignmentsController {
     @ApiResponse(responseCode = "404", description = "No existe, es de otra organización o de otro usuario",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     AssignmentResource get(@Parameter(description = "Id de la asignación", example = OrganizationApiExamples.ASSIGNMENT_ID) @PathVariable UUID id) {
-        return AssignmentResource.of(assignments.get(id));
+        return AssignmentResource.of(queries.assignment(id));
     }
 
     @PatchMapping("/{id}")
@@ -96,7 +100,7 @@ class AssignmentsController {
     @ApiResponse(responseCode = "409", description = "La asignación ya había terminado",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     AssignmentResource update(@Parameter(description = "Id de la asignación", example = OrganizationApiExamples.ASSIGNMENT_ID) @PathVariable UUID id, @Valid @RequestBody UpdateAssignmentRequest request) {
-        return AssignmentResource.of(assignments.update(id, new AssignmentService.UpdateAssignment(request.active())));
+        return AssignmentResource.of(commands.updateAssignment(id, new AssignmentService.UpdateAssignment(request.active())));
     }
 
     @Schema(description = "Encargado y lugar")

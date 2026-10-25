@@ -4,6 +4,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import jakarta.persistence.Version;
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -21,10 +23,11 @@ public class OrganizationJpaEntity {
     @Id
     private UUID id;
 
+    @JdbcTypeCode(SqlTypes.CHAR)
     @Column(name = "ruc", nullable = false, length = 11)
     private String ruc;
 
-    @Column(name = "legal_name", nullable = false, length = 200)
+    @Column(name = "business_name", nullable = false, length = 150)
     private String legalName;
 
     @Version

@@ -105,7 +105,7 @@ public class WorksiteService {
     }
 
     private Worksite publish(String eventType, Worksite worksite) {
-        outbox.append(eventType, OrganizationEvents.LOCATION, worksite.id(),
+        outbox.append(eventType, worksite.id(),
                 OrganizationEvents.LocationChanged.of(worksite, LocalDate.now(clock)));
         return worksite;
     }

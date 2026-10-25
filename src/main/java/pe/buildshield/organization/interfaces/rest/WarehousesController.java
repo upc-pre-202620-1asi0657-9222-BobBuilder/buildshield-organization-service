@@ -23,6 +23,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import pe.buildshield.organization.shared.error.ErrorResponse;
+import pe.buildshield.organization.application.OrganizationCommandService;
+import pe.buildshield.organization.application.OrganizationQueryService;
 import pe.buildshield.organization.application.WarehouseService;
 import pe.buildshield.organization.application.WarehouseService.WarehouseView;
 import pe.buildshield.organization.domain.model.WarehouseType;
@@ -37,10 +39,12 @@ import java.util.UUID;
 @SecurityRequirement(name = "bearer")
 class WarehousesController {
 
-    private final WarehouseService warehouses;
+    private final OrganizationCommandService commands;
+    private final OrganizationQueryService queries;
 
-    WarehousesController(WarehouseService warehouses) {
-        this.warehouses = warehouses;
+    WarehousesController(OrganizationCommandService commands, OrganizationQueryService queries) {
+        this.commands = commands;
+        this.queries = queries;
     }
 
     @PostMapping
@@ -55,7 +59,7 @@ class WarehousesController {
     @ApiResponse(responseCode = "403", description = "Solo el administrador registra almacenes",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     ResponseEntity<WarehouseResource> register(@Valid @RequestBody RegisterWarehouseRequest request) {
-        WarehouseView created = warehouses.register(
+        WarehouseView created = commands.registerWarehouse(
                 new WarehouseService.RegisterWarehouse(request.name(), request.type(), request.address()));
         return ResponseEntity.created(URI.create("/api/v1/warehouses/" + created.id())).body(WarehouseResource.of(created));
     }
@@ -68,7 +72,7 @@ class WarehousesController {
             content = @Content(array = @ArraySchema(schema = @Schema(implementation = WarehouseResource.class)),
                     examples = @ExampleObject(value = OrganizationApiExamples.WAREHOUSES)))
     List<WarehouseResource> list() {
-        return warehouses.list().stream().map(WarehouseResource::of).toList();
+        return queries.warehouses().stream().map(WarehouseResource::of).toList();
     }
 
     @GetMapping("/{id}")
@@ -80,7 +84,7 @@ class WarehousesController {
     @ApiResponse(responseCode = "404", description = "No existe, es de otra organización o el usuario no tiene acceso",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     WarehouseResource get(@Parameter(description = "Id del almacén", example = OrganizationApiExamples.WAREHOUSE_ID) @PathVariable UUID id) {
-        return WarehouseResource.of(warehouses.get(id));
+        return WarehouseResource.of(queries.warehouse(id));
     }
 
     @PatchMapping("/{id}")
@@ -93,20 +97,20 @@ class WarehousesController {
     @ApiResponse(responseCode = "404", description = "No existe o es de otra organización",
             content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
     WarehouseResource update(@Parameter(description = "Id del almacén", example = OrganizationApiExamples.WAREHOUSE_ID) @PathVariable UUID id, @Valid @RequestBody UpdateWarehouseRequest request) {
-        return WarehouseResource.of(warehouses.update(id, new WarehouseService.UpdateWarehouse(
+        return WarehouseResource.of(commands.updateWarehouse(id, new WarehouseService.UpdateWarehouse(
                 request.name(), request.type(), request.address(), request.active())));
     }
 
     @Schema(description = "Datos del almacén o centro de acopio")
     record RegisterWarehouseRequest(
-            @Schema(example = "Almacén Central") @NotBlank @Size(max = 150) String name,
+            @Schema(example = "Almacén Central") @NotBlank @Size(max = 120) String name,
             @Schema(example = "WAREHOUSE") @NotNull WarehouseType type,
             @Schema(example = "Av. Argentina 2500, Callao") @NotBlank @Size(max = 200) String address) {
     }
 
     @Schema(description = "Cambios del almacén; los campos ausentes no cambian")
     record UpdateWarehouseRequest(
-            @Size(max = 150) String name,
+            @Size(max = 120) String name,
             WarehouseType type,
             @Size(max = 200) String address,
             @Schema(description = "false desactiva, true reactiva") Boolean active) {

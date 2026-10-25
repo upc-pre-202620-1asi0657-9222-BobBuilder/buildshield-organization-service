@@ -95,7 +95,7 @@ class OrganizationPersistenceIT {
         assertThatThrownBy(() -> in(andina, () -> assignments.save(
                 StaffAssignment.assign(jorge, "SITE_MANAGER", SiteType.WORKSITE, torre.id(), Instant.now()))))
                 .isInstanceOf(DataIntegrityViolationException.class)
-                .hasMessageContaining("uk_staff_assignments_active_worksite");
+                .hasMessageContaining("uk_location_assignments_active");
 
         in(andina, () -> {
             first.end(Instant.now());

@@ -14,6 +14,16 @@ public enum SiteType {
         this.assignableRole = assignableRole;
     }
 
+    /** Tipo de lugar al que se asigna ese rol de encargado. */
+    public static SiteType forRole(String role) {
+        for (SiteType type : values()) {
+            if (type.assignableRole.equals(role)) {
+                return type;
+            }
+        }
+        throw new IllegalArgumentException("Rol sin lugar asignable: " + role);
+    }
+
     public String displayName() {
         return displayName;
     }

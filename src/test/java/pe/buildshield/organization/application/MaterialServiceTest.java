@@ -47,9 +47,9 @@ class MaterialServiceTest {
         assertThat(view.sku()).isEqualTo("CEM-001");
         assertThat(view.wasteTolerancePercent()).isEqualTo(new BigDecimal("2.50"));
         assertThat(view.active()).isTrue();
-        verify(outbox).append(eq("MaterialRegistered"), eq("MATERIAL"), eq(view.id()),
+        verify(outbox).append(eq("MaterialRegistered"), eq(view.id()),
                 eq(new OrganizationEvents.MaterialChanged(view.id(), "CEM-001", "Cemento", "BAG",
-                        new BigDecimal("2.50"), true)));
+                        new BigDecimal("0.000"), new BigDecimal("2.50"), true)));
     }
 
     @Test
@@ -103,7 +103,7 @@ class MaterialServiceTest {
         assertThat(view.wasteTolerancePercent()).isEqualTo(new BigDecimal("1.50"));
         assertThat(view.active()).isFalse();
         assertThat(unchanged.name()).isEqualTo("Cemento tipo V");
-        verify(outbox, times(2)).append(eq("MaterialUpdated"), eq("MATERIAL"), eq(ID), any());
+        verify(outbox, times(2)).append(eq("MaterialUpdated"), eq(ID), any());
     }
 
     @Test

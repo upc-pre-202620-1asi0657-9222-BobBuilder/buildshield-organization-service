@@ -18,7 +18,7 @@ Fuente fija: `buildshield-presentacion-v4.pdf` (ER pág. 15, C4 pág. 25). Todo 
 | `locations` | `district`, `city`, `latitude`, `longitude` | Ubicación de la obra (US14). La usan el registro y la consulta de obras. |
 | `location_assignments` | `organization_id` | Toda tabla de negocio lleva la organización para el filtro multiempresa. |
 | `location_assignments` | `assigned_at`, `ended_at` | Una asignación terminada se conserva como historial (US17). |
-| `outbox_events` | `actor_id`, `correlation_id` | Van en el sobre del evento (`actorId` y la cabecera de correlación). |
+| `outbox_events` | `correlation_id` | Va en la cabecera de correlación del mensaje. `actor_id` ya no existe: el sobre completo del evento (con `actorId`) se guarda en `payload` (migración V4), como en iam. |
 
 ## Diferencias de definición
 
@@ -26,6 +26,11 @@ Fuente fija: `buildshield-presentacion-v4.pdf` (ER pág. 15, C4 pág. 25). Todo 
 - **`locations.active` en obras**: una obra está vigente si no tiene fecha de fin o su fin no venció. `active` guarda esa vigencia en el último cambio; las consultas y el límite del plan usan las fechas.
 - **`materials.unit_weight_kg`**: el ER la pide no nula. La API la acepta opcional al registrar un material y, si falta, queda en 0 para no romper a los clientes anteriores.
 - **Nombres**: se acortan a los máximos del ER (`name` 120 y `business_name` 150). La API de organizaciones sigue exponiendo `legalName` y la de materiales `wasteTolerancePercent`, para no cambiar el contrato con el gateway.
+
+## Llaves foráneas del ER que no se crean
+
+- **`user_projection.organization_id` y `subscription_projection.organization_id` hacia `organizations`**: el ER las dibuja, pero sus filas las crean `UserCreated` (tópico `buildshield.iam`, otra partición que `OrganizationRegistered`) y `SubscriptionActivated` (tópico `buildshield.subscription`). Kafka no ordena entre tópicos ni entre particiones, así que el evento puede llegar antes que la organización. Con la llave, el consumidor falla, reintenta 5 veces cada segundo y después descarta el evento (queda solo un log de error), con lo que la proyección quedaría sin ese usuario o plan. Se deja sin llave hasta que el consumidor reencole los eventos huérfanos o el ER acepte la desviación.
+- Sí existen `location_assignments.organization_id` y `outbox_events.organization_id` (migración V4): se escriben dentro de la transacción de una organización ya registrada.
 
 ## Componentes
 

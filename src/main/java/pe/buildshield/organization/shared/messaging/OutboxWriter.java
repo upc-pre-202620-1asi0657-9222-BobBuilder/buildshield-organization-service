@@ -11,6 +11,7 @@ import pe.buildshield.organization.shared.tenant.TenantInfo;
 
 import java.sql.Timestamp;
 import java.time.Clock;
+import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -47,12 +48,35 @@ public class OutboxWriter {
         Objects.requireNonNull(eventType, "eventType");
         Objects.requireNonNull(aggregateId, "aggregateId");
         UUID eventId = UUID.randomUUID();
+        Instant occurredAt = clock.instant();
+        // La tabla tiene las columnas del ER de la v4 (sin aggregate_type ni actor_id): el sobre completo va en
+        // payload y el publicador lo envía tal cual.
+        EventEnvelope envelope = new EventEnvelope(eventId, eventType, occurredAt, organizationId,
+                aggregateTypeOf(eventType), aggregateId.toString(), actorId, EventEnvelope.CURRENT_VERSION,
+                json.valueToTree(payload));
         jdbc.update("""
-                INSERT INTO outbox_events (id, event_type, aggregate_id, organization_id, actor_id, correlation_id,
+                INSERT INTO outbox_events (id, event_type, aggregate_id, organization_id, correlation_id,
                     payload, occurred_at)
-                VALUES (?, ?, ?, ?, ?, ?, CAST(? AS jsonb), ?)
-                """, eventId, eventType, UUID.fromString(aggregateId.toString()), organizationId, actorId,
-                MDC.get(CorrelationId.MDC_KEY), json.valueToTree(payload).toString(), Timestamp.from(clock.instant()));
+                VALUES (?, ?, ?, ?, ?, CAST(? AS jsonb), ?)
+                """, eventId, eventType, UUID.fromString(aggregateId.toString()), organizationId,
+                MDC.get(CorrelationId.MDC_KEY), json.valueToTree(envelope).toString(), Timestamp.from(occurredAt));
         return eventId;
+    }
+
+    /**
+     * Tipo de agregado del sobre, deducido del tipo de evento: el nombre del evento sin su último término
+     * ({@code LocationRegistered} es {@code Location}). Los eventos de personal son de una {@code Assignment}.
+     */
+    static String aggregateTypeOf(String eventType) {
+        if (eventType.startsWith("Staff")) {
+            return "Assignment";
+        }
+        int lastWord = 0;
+        for (int i = 1; i < eventType.length(); i++) {
+            if (Character.isUpperCase(eventType.charAt(i))) {
+                lastWord = i;
+            }
+        }
+        return lastWord == 0 ? eventType : eventType.substring(0, lastWord);
     }
 }
